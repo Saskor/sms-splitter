@@ -78,7 +78,7 @@ function trimRight(text) {
     return text.replace(/\s+\S*$/, "");
 }
 
-function getApproximatelySmsCountForFewSms(text) {
+function getPreciseOrOneLessPreciseSmsCountForFewSms(text) {
     let nextText = text;
     let minSmsCount = 0;
     const approximatelySmsAmount = getApproximatelySmsAmount(text);
@@ -139,8 +139,8 @@ function getApproximatelySmsCountForFewSms(text) {
 
 }
 
-function getApproximatelySmsCount(text) {
-    return text.length > SINGLE_SMS_LENGTH ? getApproximatelySmsCountForFewSms(text) : 1;
+function getPreciseOrOneLessPreciseSmsCount(text) {
+    return text.length > SINGLE_SMS_LENGTH ? getPreciseOrOneLessPreciseSmsCountForFewSms(text) : 1;
 }
 
 function getSmsTextWithoutSuffix({
@@ -216,7 +216,7 @@ function getAdjustedSmsListForIncreasedSmsCountDigits({
 
 function getSmsList({
     text,
-    smsCount = getApproximatelySmsCount(text),
+    smsCount = getPreciseOrOneLessPreciseSmsCount(text),
     firstSmsIndex = FIRST_SMS_INDEX_DEFAULT
 }) {
     let nextText = text;
