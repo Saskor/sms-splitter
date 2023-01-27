@@ -1,0 +1,15 @@
+.output {
+    width: 1384px;
+    height: 200px;
+    border: 1px solid;
+    overflow: auto;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+}
+
+#button, #input {
+    display: block;
+}
