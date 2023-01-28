@@ -272,7 +272,6 @@ function getSmsTextList({
 
         const smsText = getSmsText(smsTextWithoutSuffix, smsTextSuffix);
         smsTextList.push(smsTextWithoutSuffix);
-        console.log(smsText);
 
         const haveFirstSmsWithFullLength = isSmsTextHaveFullLength(smsText) && !textForRewritingSmsList;
 
