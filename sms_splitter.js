@@ -191,11 +191,11 @@ function getAdjustedSmsList({
     smsTextList,
     textForRewritingSmsList,
     smsCountDigitsIncrease,
-    firstSmsWithFullLengthIndex
+    firstSmsWithFullLengthIndex,
+    lastSmsIndex
 }) {
-    const lastSmsSerialNumber = smsTextList.length;
-    const smsTextListLastSmsIndex = smsTextList.length - DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
-    const lastSmsText = smsTextList[smsTextListLastSmsIndex];
+    const lastSmsSerialNumber = lastSmsIndex + DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
+    const lastSmsText = smsTextList[lastSmsIndex];
 
     return smsCountDigitsIncrease
         ? getAdjustedSmsTextListForIncreasedSmsCountDigits({
@@ -204,14 +204,15 @@ function getAdjustedSmsList({
                 firstSmsWithFullLengthIndex
             ),
             adjustedSmsCount: getApproximatelySmsCount(lastSmsText) + lastSmsSerialNumber,
-            textForRewritingSmsList
+            textForRewritingSmsList,
+            firstSmsIndex: firstSmsWithFullLengthIndex
         })
         : [
-            ...smsTextList.slice(FIRST_SYMBOL_INDEX, smsTextListLastSmsIndex),
+            ...smsTextList.slice(FIRST_SYMBOL_INDEX, lastSmsIndex),
             ...getSmsTextList({
                 text: lastSmsText,
                 smsCount: getApproximatelySmsCount(lastSmsText) + lastSmsSerialNumber,
-                firstSmsIndex: smsTextListLastSmsIndex
+                firstSmsIndex: lastSmsIndex
             })
         ];
 }
@@ -219,16 +220,14 @@ function getAdjustedSmsList({
 function getAdjustedSmsTextListForIncreasedSmsCountDigits({
     smsTextListBeforeFirstSmsWithFullLength,
     adjustedSmsCount,
-    textForRewritingSmsList
+    textForRewritingSmsList,
+    firstSmsIndex
 }) {
-    const firstPartAdjustedSmsList = getSmsListFromTextList(
-        smsTextListBeforeFirstSmsWithFullLength,
-        adjustedSmsCount
-    );
+    const firstPartAdjustedSmsList = smsTextListBeforeFirstSmsWithFullLength;
     const secondPartAdjustedSmsList = getSmsTextList({
         text: textForRewritingSmsList,
         smsCount: adjustedSmsCount,
-        firstSmsIndex: firstPartAdjustedSmsList.length
+        firstSmsIndex
     });
     return [...firstPartAdjustedSmsList, ...secondPartAdjustedSmsList];
 }
@@ -247,11 +246,11 @@ function getSmsTextList({
 
     const smsTextList = [];
     let firstSmsWithFullLengthIndex;
+    const lastSmsIndex = smsCount - DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
 
     const moreThenOneSms = text.length > SINGLE_SMS_LENGTH;
 
     for(let i = firstSmsIndex; i < smsCount; i++) {
-        const lastIndex = smsCount - DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
 
         const smsSerialNumber = i + DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
         const smsTextSuffix = moreThenOneSms ? getSmsTextSuffix(smsSerialNumber, smsCount) : "";
@@ -259,8 +258,8 @@ function getSmsTextList({
             ? SINGLE_SMS_LENGTH - smsTextSuffix.length
             : SINGLE_SMS_LENGTH;
         const nextTextShorterThenOneSms = nextText[smsTextSliceUpTo] === undefined;
-        const lastSms = i === lastIndex || nextTextShorterThenOneSms;
-        const smsTextWithoutSuffix = lastSms || lastSms
+        const lastSms = i === lastSmsIndex || nextTextShorterThenOneSms;
+        const smsTextWithoutSuffix = lastSms
             ? nextText
             : getSmsTextWithoutSuffix({
             text: nextText,
@@ -285,11 +284,10 @@ function getSmsTextList({
             smsCount,
             needToAdjustSmsList
         })
-        nextText = nextText.slice(currentTextPartAfterLastIndex);
-
         if (lastSms) {
             break;
         }
+        nextText = nextText.slice(currentTextPartAfterLastIndex);
     }
 
     return needToAdjustSmsList
@@ -297,7 +295,8 @@ function getSmsTextList({
             smsTextList,
             smsCountDigitsIncrease,
             textForRewritingSmsList,
-            firstSmsWithFullLengthIndex
+            firstSmsWithFullLengthIndex,
+            lastSmsIndex
         })
         : smsTextList;
 }
