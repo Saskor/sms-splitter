@@ -169,14 +169,12 @@ function isSmsCountDigitsIncrease({
     smsCount,
     needToAdjustSmsList
 }) {
-    if(firstSmsIndex === FIRST_SMS_INDEX_DEFAULT) {
-        return false;
-    }
+    const callGetSmsTextListNotJustOnce = firstSmsIndex !== FIRST_SMS_INDEX_DEFAULT;
     const increaseByNextSms = needToAdjustSmsList
         && (countDigits(smsCount + ONE_SMS) - countDigits(smsCount))
         === ONE_DIGIT_LENGTH;
-    const increaseByNextSmsCount = (countDigits(smsCount) - countDigits(firstSmsIndex))
-        === ONE_DIGIT_LENGTH;
+    const increaseByNextSmsCount = callGetSmsTextListNotJustOnce
+        && (countDigits(smsCount) - countDigits(firstSmsIndex)) === ONE_DIGIT_LENGTH;
     return increaseByNextSms || increaseByNextSmsCount;
 }
 
