@@ -135,7 +135,7 @@ function getApproximatelySmsCountForFewSms(text) {
         minSmsCount = minSmsCount + minSmsCountCurrent;
     }
 
-    return Math.round(minSmsCount);
+    return Math.ceil(minSmsCount);
 
 }
 
@@ -195,7 +195,7 @@ function getAdjustedSmsList({
     lastSmsIndex
 }) {
     const lastSmsSerialNumber = lastSmsIndex + DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER;
-    const lastSmsText = smsTextList[lastSmsIndex];
+    const lastSmsText = smsTextList[smsTextList.length - DIFFERENCE_BETWEEN_SMS_INDEX_AND_SMS_SERIAL_NUMBER];
 
     return smsCountDigitsIncrease
         ? getAdjustedSmsTextListForIncreasedSmsCountDigits({
