@@ -75,7 +75,7 @@ function getAverageSymbolsPerSms({
     return averageSymbolsPerSms;
 }
 
-function trimRight(text) {
+function getTextBeforeLastSpace(text) {
     return text.replace(/\s+\S*$/, "");
 }
 
@@ -123,7 +123,7 @@ function getApproximatelySmsCountForFewSms(text) {
 
         nextText = wholeLastWordIncluded
             ? nextText.slice(nextTextSliceFrom)
-            : trimRight(nextText.slice(nextTextSliceFrom));
+            : getTextBeforeLastSpace(nextText.slice(nextTextSliceFrom));
 
         const minSmsCountCurrentForLastTextPart = nextText.length
             ? fullSmsAmountForCurrentTextPart
@@ -152,7 +152,7 @@ function getSmsTextWithoutSuffix({
     const textPart = text.slice(FIRST_SYMBOL_INDEX, smsTextSliceUpTo);
     const textPartAfterLastSymbol = text[smsTextSliceUpTo];
     const wholeLastWordIncluded = textPartAfterLastSymbol === SPACE_SYMBOL;
-    const adjustedTextPart = wholeLastWordIncluded ? textPart : trimRight(textPart);
+    const adjustedTextPart = wholeLastWordIncluded ? textPart : getTextBeforeLastSpace(textPart);
     return moreThenOneSms ? adjustedTextPart : textPart;
 }
 
