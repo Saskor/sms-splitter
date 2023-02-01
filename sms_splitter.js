@@ -48,7 +48,7 @@ function getAverageWordLengthPerText(text) {
     return text.length / wordsCount;
 }
 
-function getApproximatelySmsAmount(text) {
+function getApproximatelySmsCountByDefaultSmsLength(text) {
     return Math.ceil(text.length / DEFAULT_SMS_LENGTH_WITHOUT_SUFFIX);
 }
 
@@ -79,65 +79,150 @@ function getTextBeforeLastSpace(text) {
     return text.replace(/\s+\S*$/, "");
 }
 
+    function getNextText({
+    digitApproximatelySmsCountIndex: i,
+    nextText,
+    digitsInApproximatelySmsCount
+}) {
+    const currentTextPartIsLast = i + 1 === digitsInApproximatelySmsCount;
+    const textLengthMultiplierDigit =  10 ** i;
+    const fullSmsCountForCurrentTextPart = TEXT_LENGTH_MULTIPLIER * textLengthMultiplierDigit;
+
+    const smsTextSuffixLength = getSmsTextSuffixLength(
+        countDigits(textLengthMultiplierDigit),
+        digitsInApproximatelySmsCount
+    );
+    const smsTextWithoutSuffixLength = SINGLE_SMS_LENGTH - (smsTextSuffixLength + SPACE_BETWEEN_WORDS_LENGTH);
+
+    const IdealCaseTextSliceUpTo = currentTextPartIsLast
+        ?    nextText.length
+        :    fullSmsCountForCurrentTextPart * smsTextWithoutSuffixLength;
+    const textPartForIdealCase = nextText.slice(FIRST_SYMBOL_INDEX, IdealCaseTextSliceUpTo);
+
+    const averageWordLengthPerText = getAverageWordLengthPerText(textPartForIdealCase);
+    const averageWordsPerSms = Math.floor(smsTextWithoutSuffixLength / averageWordLengthPerText);
+    const averageSymbolsPerSms = getAverageSymbolsPerSms({
+        averageWordsPerSms,
+        averageWordLengthPerText,
+        smsTextWithoutSuffixLength
+    });
+
+    const fullSymbolsCountForCurrentDigit = fullSmsCountForCurrentTextPart * averageSymbolsPerSms;
+    const endOfTheNextTextIndex = nextText.length + 1;
+    const currentTextPartLength = currentTextPartIsLast
+        ? endOfTheNextTextIndex
+        : fullSymbolsCountForCurrentDigit;
+    const currentTextPart = nextText.slice(FIRST_SYMBOL_INDEX, currentTextPartLength);
+    const currentTextPartAfterLastSymbol = currentTextPart[currentTextPartLength + ONE_TEXT_SYMBOL_LENGTH];
+
+    const wholeLastWordIncluded = currentTextPartIsLast
+        ? true
+        : currentTextPartAfterLastSymbol === SPACE_SYMBOL;
+
+    return wholeLastWordIncluded
+        ? nextText.slice(currentTextPartLength)
+        : nextText.slice(getTextBeforeLastSpace(currentTextPart).length);
+}
+
+function getFullSmsCountForCurrentTextPart(digitApproximatelySmsCountIndex) {
+    const textLengthMultiplierDigit =  10 ** digitApproximatelySmsCountIndex;
+    return TEXT_LENGTH_MULTIPLIER * textLengthMultiplierDigit;
+}
+
+function getCurrentTextPartIsLast(digitApproximatelySmsCountIndex, digitsInApproximatelySmsCount) {
+    return digitApproximatelySmsCountIndex + 1 === digitsInApproximatelySmsCount
+}
+
+function getSmsTextWithoutSuffixLength(digitApproximatelySmsCountIndex, digitsInApproximatelySmsCount) {
+    const textLengthMultiplierDigit =  10 ** digitApproximatelySmsCountIndex;
+
+    const smsTextSuffixLength = getSmsTextSuffixLength(
+        countDigits(textLengthMultiplierDigit),
+        digitsInApproximatelySmsCount
+    );
+
+    return SINGLE_SMS_LENGTH - (smsTextSuffixLength + SPACE_BETWEEN_WORDS_LENGTH);
+}
+
+function getIdealCaseTextSliceUpTo({digitApproximatelySmsCountIndex: i, digitsInApproximatelySmsCount, nextText}) {
+    return getCurrentTextPartIsLast(i, digitsInApproximatelySmsCount)
+        ?    nextText.length
+        :    getFullSmsCountForCurrentTextPart(i) * getSmsTextWithoutSuffixLength(i, digitsInApproximatelySmsCount);
+}
+
+function getAverageSymbolsPerSmsForCurrentTextPart({
+    digitApproximatelySmsCountIndex,
+    digitsInApproximatelySmsCount,
+    nextText
+}) {
+    const textLengthMultiplierDigit =  10 ** digitApproximatelySmsCountIndex;
+    const smsTextSuffixLength = getSmsTextSuffixLength(
+        countDigits(textLengthMultiplierDigit),
+        digitsInApproximatelySmsCount
+    );
+    const smsTextWithoutSuffixLength = SINGLE_SMS_LENGTH - (smsTextSuffixLength + SPACE_BETWEEN_WORDS_LENGTH);
+
+    const IdealCaseTextSliceUpTo = getIdealCaseTextSliceUpTo({
+        digitApproximatelySmsCountIndex,
+        digitsInApproximatelySmsCount,
+        nextText
+    })
+    const textPartForIdealCase = nextText.slice(FIRST_SYMBOL_INDEX, IdealCaseTextSliceUpTo);
+
+    const averageWordLengthPerText = getAverageWordLengthPerText(textPartForIdealCase);
+    const averageWordsPerSms = Math.floor(smsTextWithoutSuffixLength / averageWordLengthPerText);
+
+    return getAverageSymbolsPerSms({
+        averageWordsPerSms,
+        averageWordLengthPerText,
+        smsTextWithoutSuffixLength
+    });
+}
+
+function getMinSmsCountCurrent({prevText, digitsInApproximatelySmsCount, digitApproximatelySmsCountIndex}) {
+    const idealCaseTextSliceUpTo = getIdealCaseTextSliceUpTo({
+        digitApproximatelySmsCountIndex,
+        digitsInApproximatelySmsCount,
+        nextText: prevText
+    });
+    const averageSymbolsPerSmsForCurrentTextPart = getAverageSymbolsPerSmsForCurrentTextPart({
+        digitApproximatelySmsCountIndex,
+        digitsInApproximatelySmsCount,
+        nextText: prevText
+    });
+    const minSmsCountForCurrentTextPart = idealCaseTextSliceUpTo / averageSymbolsPerSmsForCurrentTextPart;
+
+    const fullSmsCountForCurrentTextPart = getFullSmsCountForCurrentTextPart(digitApproximatelySmsCountIndex);
+    const nextText = getNextText({
+        digitApproximatelySmsCountIndex,
+        nextText: prevText,
+        digitsInApproximatelySmsCount
+    });
+    const minSmsCountForLastTextPart = nextText.length
+        ? fullSmsCountForCurrentTextPart
+        : minSmsCountForCurrentTextPart;
+
+    return getCurrentTextPartIsLast(digitApproximatelySmsCountIndex, digitsInApproximatelySmsCount)
+        ? minSmsCountForLastTextPart
+        : fullSmsCountForCurrentTextPart;
+}
+
 function getApproximatelySmsCountForFewSms(text) {
     let nextText = text;
     let minSmsCount = 0;
-    const approximatelySmsAmount = getApproximatelySmsAmount(text);
-    const digitsInApproximatelySmsAmount = countDigits(approximatelySmsAmount);
+    const approximatelySmsCount = getApproximatelySmsCountByDefaultSmsLength(text);
+    const digitsInApproximatelySmsCount = countDigits(approximatelySmsCount);
 
-    for (let i = 0; i < digitsInApproximatelySmsAmount; i++) {
-        const lastDigitApproximatelySmsAmount = i + 1 === digitsInApproximatelySmsAmount;
-        const textLengthMultiplierDigit =  10 ** i;
-        const fullSmsAmountForCurrentTextPart = TEXT_LENGTH_MULTIPLIER * textLengthMultiplierDigit;
-
-        const smsTextSuffixLength = getSmsTextSuffixLength(
-            countDigits(textLengthMultiplierDigit),
-            digitsInApproximatelySmsAmount
-        );
-        const smsTextWithoutSuffixLength = SINGLE_SMS_LENGTH - (smsTextSuffixLength + SPACE_BETWEEN_WORDS_LENGTH);
-
-        const IdealCaseTextSliceUpTo = lastDigitApproximatelySmsAmount
-        ?    nextText.length
-        :    fullSmsAmountForCurrentTextPart * smsTextWithoutSuffixLength;
-        const textPartForIdealCase = nextText.slice(FIRST_SYMBOL_INDEX, IdealCaseTextSliceUpTo);
-
-        const averageWordLengthPerText = getAverageWordLengthPerText(textPartForIdealCase);
-        const averageWordsPerSms = Math.floor(smsTextWithoutSuffixLength / averageWordLengthPerText);
-        const averageSymbolsPerSms = getAverageSymbolsPerSms({
-            averageWordsPerSms,
-            averageWordLengthPerText,
-            smsTextWithoutSuffixLength
+    for(let i = 0; i < digitsInApproximatelySmsCount; i++) {
+        const prevText = nextText;
+        minSmsCount = minSmsCount + getMinSmsCountCurrent({
+            prevText,
+            digitsInApproximatelySmsCount,
+            digitApproximatelySmsCountIndex: i
         });
-
-        const fullSymbolsAmountForCurrentDigit = fullSmsAmountForCurrentTextPart * averageSymbolsPerSms;
-        const endOfTheNextTextIndex = nextText.length + 1;
-        const nextTextSliceFrom = lastDigitApproximatelySmsAmount
-            ? endOfTheNextTextIndex
-            : fullSymbolsAmountForCurrentDigit;
-
-        const currentTextPartAfterLastSymbol = nextText[nextTextSliceFrom + ONE_TEXT_SYMBOL_LENGTH];
-
-        const wholeLastWordIncluded = lastDigitApproximatelySmsAmount
-            ? true
-            : currentTextPartAfterLastSymbol === SPACE_SYMBOL;
-
-        nextText = wholeLastWordIncluded
-            ? nextText.slice(nextTextSliceFrom)
-            : getTextBeforeLastSpace(nextText.slice(nextTextSliceFrom));
-
-        const minSmsCountCurrentForLastTextPart = nextText.length
-            ? fullSmsAmountForCurrentTextPart
-            : IdealCaseTextSliceUpTo / averageSymbolsPerSms;
-
-        const minSmsCountCurrent = lastDigitApproximatelySmsAmount
-            ? minSmsCountCurrentForLastTextPart
-            : fullSmsAmountForCurrentTextPart;
-
-        minSmsCount = minSmsCount + minSmsCountCurrent;
     }
 
     return Math.ceil(minSmsCount);
-
 }
 
 function getApproximatelySmsCount(text) {
