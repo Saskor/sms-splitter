@@ -380,8 +380,6 @@ function getSmsTextList({
     const moreThenOneSms = text.length > SINGLE_SMS_LENGTH;
 
     for(let i = firstSmsIndex; i < smsCount; i++) {
-
-
         const smsTextSuffix = getSmsTextSuffix({
             moreThenOneSms,
             smsCount,
